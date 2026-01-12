@@ -1,8 +1,7 @@
 [package]
 name = "catloaf"
-version = "0.0.0"
-# version = "0.0.1-alpha.1"
-description = "Core-Affine, Thread-Local, Opinionated Actor Framework."
+version = "0.0.1-alpha.1"
+description = "core-affine, thread-local, opinionated actor framework."
 edition = "2021"
 license = "BSD-3-Clause"
 repository = "https://github.com/NTDuck/catloaf"

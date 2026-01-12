@@ -1,6 +1,6 @@
 # catloaf
 
-Core-Affine, Thread-Local, Opinionated Actor Framework.<br>
+**c**ore-**a**ffine, **t**hread-**l**ocal, **o**pinionated **a**ctor **f**ramework.<br>
 inspired by [actix](https://crates.io/crates/actix) and [ractor](https://crates.io/crates/ractor).
 
 ## License

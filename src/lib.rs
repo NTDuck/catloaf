@@ -1,3 +1,23 @@
+// This will be annotated with proc macro that generates topology
+// Which will generate necessary methods
+pub struct Registry;
+
+// For now the behaviour of an actor is defined by started() & receive()
+// (or respond()?, dig in later).
+// The actor do not know about other actors,
+// but their interfaces i.e. Send/Recv
+pub trait Actor {
+    fn started(&mut self) -> impl ::futures::Future<Output = ()>;
+}
+
+// Will have to change later
+pub trait Receive<T> {
+    fn recv(&mut self, _: T) -> impl ::futures::Future<Output = ()>;
+}
+
+// Abstractions for barebone stuff
+
+
 pub mod sync {
     pub trait Send<T> {
         type Fut<'fut>: ::futures::Future<Output = ()>
@@ -38,6 +58,7 @@ pub mod sync {
     }
 
     mod spsc {
+        #[cfg(feature = "ringbuf")]
         mod ringbuf {}
 
         #[cfg(feature = "flume")]

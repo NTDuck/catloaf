@@ -18,7 +18,7 @@ pub trait Receive<T> {
 // Abstractions for barebone stuff
 
 
-pub mod sync {
+pub mod channel {
     pub trait Send<T> {
         type Fut<'fut>: ::futures::Future<Output = ()>
         where
@@ -35,11 +35,37 @@ pub mod sync {
         fn recv(&mut self) -> Self::Fut<'_>;
     }
 
-    mod util {
-        #[repr(transparent)]
-        pub struct InfallibleFut<Fut>(pub(crate) Fut);
+    #[cfg(feature = "flume")]
+    mod flume {
+        impl<T> crate::channel::Send<T> for ::flume::Sender<T> {
+            type Fut<'fut> = crate::channel::future::Infallible<::flume::r#async::SendFut<'fut, T>>
+            where
+                Self: 'fut;
+        
+            fn send(&mut self, val: T) -> Self::Fut<'_> {
+                crate::channel::future::Infallible(self.send_async(val))
+            }
+        }
 
-        impl<Fut, T, Err> ::futures::Future for InfallibleFut<Fut>
+        impl<T> crate::channel::Recv<T> for ::flume::Receiver<T> {
+            type Fut<'fut> = crate::channel::future::Infallible<::flume::r#async::RecvFut<'fut, T>>
+            where
+                Self: 'fut;
+        
+            fn recv(&mut self) -> Self::Fut<'_> {
+                crate::channel::future::Infallible(self.recv_async())
+            }
+        }
+    }
+
+    #[cfg(feature = "ringbuf")]
+    mod ringbuf {}
+    
+    mod future {
+        #[repr(transparent)]
+        pub struct Infallible<Fut>(pub(crate) Fut);
+
+        impl<Fut, T, Err> ::futures::Future for Infallible<Fut>
         where 
             Fut: ::futures::Future<Output = ::core::result::Result<T, Err>>,
         {
@@ -52,34 +78,6 @@ pub mod sync {
                     ::core::task::Poll::Pending => ::core::task::Poll::Pending,
                     ::core::task::Poll::Ready(::core::result::Result::Ok(val)) => ::core::task::Poll::Ready(val),
                     ::core::task::Poll::Ready(::core::result::Result::Err(_)) => ::core::unreachable!(),
-                }
-            }
-        }
-    }
-
-    mod spsc {
-        #[cfg(feature = "ringbuf")]
-        mod ringbuf {}
-
-        #[cfg(feature = "flume")]
-        mod flume {
-            impl<T> crate::sync::Send<T> for ::flume::Sender<T> {
-                type Fut<'fut> = crate::sync::util::InfallibleFut<::flume::r#async::SendFut<'fut, T>>
-                where
-                    Self: 'fut;
-            
-                fn send(&mut self, val: T) -> Self::Fut<'_> {
-                    crate::sync::util::InfallibleFut(self.send_async(val))
-                }
-            }
-
-            impl<T> crate::sync::Recv<T> for ::flume::Receiver<T> {
-                type Fut<'fut> = crate::sync::util::InfallibleFut<::flume::r#async::RecvFut<'fut, T>>
-                where
-                    Self: 'fut;
-            
-                fn recv(&mut self) -> Self::Fut<'_> {
-                    crate::sync::util::InfallibleFut(self.recv_async())
                 }
             }
         }
